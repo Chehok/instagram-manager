@@ -1,6 +1,6 @@
 {
-  "name": "인스타그램 맞팔 확인기",
-  "short_name": "맞팔 확인기",
+  "name": "Instagram Manager — 인스타그램 관리도구",
+  "short_name": "instagram-manager",
   "lang": "ko",
   "start_url": "./",
   "scope": "./",

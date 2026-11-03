@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>인스타그램 맞팔 확인기</title>
+<title>Instagram Manager — 인스타그램 관리도구</title>
 <script src="vendor/jszip.min.js"></script>
 <link rel="stylesheet" href="css/app.css"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#d62976">  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
 </head><body><div id="toast" class="toast hidden" role="status"></div><div class="wrap">
-<h1>📸 인스타그램 맞팔 확인기</h1>
-<div class="privacy">🔒 파일 분석은 이 브라우저에서 처리됩니다. 스냅샷·메모는 기기에 저장되며, 저장소가 없으면 메모리에만 남습니다. Google Drive 버튼을 사용할 때만 스냅샷·메모가 내 Drive로 전송됩니다.</div>
+<h1>📸 Instagram Manager — 인스타그램 관리도구</h1>
+<div class="privacy">🔒 파일 분석은 이 브라우저에서 처리됩니다. 스냅샷·메모는 기기에 저장되며, 저장소가 없으면 메모리에만 남습니다. Google Drive 버튼을 사용할 때만 스냅샷·메모가 내 Drive로 전송됩니다. 익명 방문 수만 GoatCounter로 집계하며, 인스타그램 데이터는 절대 전송되지 않습니다.</div>
 <details class="card"><summary>📥 인스타그램 데이터 받는 방법 (안내)</summary>
 <p class="muted">메뉴 이름·위치는 앱 버전에 따라 조금 다를 수 있습니다. 대략적인 경로입니다.</p>
 <ol><li>인스타그램 앱 → 프로필 → ☰ → <b>설정</b></li><li><b>계정 센터</b> → <b>내 정보 및 권한</b></li><li><b>내 정보 다운로드</b> → 다운로드 또는 전송</li><li><b>일부 정보</b> 선택 → <b>팔로워 및 팔로잉</b> 체크. 활동 분석에는 <b>좋아요, 댓글, 스토리 활동, 메시지</b>도 선택</li><li><b>기기로 다운로드</b> → 기간: 전체 기간, <b>형식: JSON</b> 선택 → 요청</li><li>준비 완료 알림(이메일)이 오면 zip을 다운로드해 아래에 올리세요.</li></ol></details>
@@ -25,4 +25,6 @@
 <div class="card"><h3>💾 저장된 스냅샷 관리</h3><ul class="list" id="snapList"></ul>
 <div class="tools"><button class="sec" id="expSnap">스냅샷 내보내기(JSON)</button><button class="sec" id="impBtn">스냅샷 가져오기</button><input type="file" id="impFile" accept=".json" class="hidden"></div><div class="tools"><button id="driveSave" disabled>Drive 저장 · 설정 필요</button><button id="driveLoad" disabled>Drive 불러오기 · 설정 필요</button></div><p id="driveHint" class="muted">config.js의 Google 클라이언트 ID를 설정하면 동기화를 사용할 수 있습니다.</p></div>
 </div>
-<script src="config.js"></script><script src="js/core.js"></script><script src="js/data.js"></script><script src="js/app.js"></script><script src="js/drive.js"></script></body></html>
+<script src="config.js"></script><script src="js/core.js"></script><script src="js/data.js"></script><script src="js/app.js"></script><script src="js/drive.js"></script><script data-goatcounter="https://instagram-manager.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+</body></html>

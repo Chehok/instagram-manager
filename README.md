@@ -1,6 +1,6 @@
-# 인스타그램 맞팔 확인기
+# Instagram Manager — 인스타그램 관리도구
 
-서버 없이 파일을 분석하는 한국어 정적 앱입니다. `index.html`을 열거나 `python3 -m http.server 8000`으로 실행하세요. GitHub Pages의 `/instagram-follow-checker/` 같은 하위 경로도 지원합니다. JSZip은 `vendor/`에서 읽으며 런타임 패키지 설치가 필요 없습니다.
+서버 없이 파일을 분석하는 한국어 정적 앱입니다. `index.html`을 열거나 `python3 -m http.server 8000`으로 실행하세요. GitHub Pages의 `/instagram-manager/` 같은 하위 경로도 지원합니다. JSZip은 `vendor/`에서 읽으며 런타임 패키지 설치가 필요 없습니다.
 
 인스타그램 정보 다운로드에서 **팔로워 및 팔로잉**, **좋아요, 댓글, 스토리 활동, 메시지**를 선택하고 **전체 기간 · JSON**으로 받으세요. ZIP 전체 또는 개별 JSON/기존 HTML 목록을 선택할 수 있습니다. 일부 파일이 없거나 손상되면 가능한 파일만 분석합니다.
 
@@ -18,7 +18,7 @@
 
 1. Google Cloud Console에서 프로젝트를 만들고 **Google Drive API**를 사용 설정합니다.
 2. Google Auth Platform에서 OAuth 동의 화면(브랜딩·대상·데이터 액세스)을 설정하고 `https://www.googleapis.com/auth/drive.appdata` 범위를 추가합니다. 테스트 상태라면 사용할 Google 계정을 테스트 사용자로 추가합니다.
-3. OAuth 클라이언트를 **웹 애플리케이션** 유형으로 만듭니다. 승인된 JavaScript 원본에 `http://localhost:8000`, 실제 배포 원본(예: `https://사용자명.github.io`)을 추가합니다. 원본에 `/instagram-follow-checker/` 같은 경로를 넣지 않습니다. 팝업 토큰 방식이므로 리디렉션 URL이나 클라이언트 비밀 키는 사용하지 않습니다.
+3. OAuth 클라이언트를 **웹 애플리케이션** 유형으로 만듭니다. 승인된 JavaScript 원본에 `http://localhost:8000`, 실제 배포 원본(예: `https://사용자명.github.io`)을 추가합니다. 원본에 `/instagram-manager/` 같은 경로를 넣지 않습니다. 팝업 토큰 방식이므로 리디렉션 URL이나 클라이언트 비밀 키는 사용하지 않습니다.
 4. `config.js`의 `const GOOGLE_CLIENT_ID = '';`에 클라이언트 ID를 넣습니다. ID가 비어 있으면 버튼은 **설정 필요**로 비활성화됩니다.
 5. 앱의 저장/불러오기 버튼을 누르면 Google 도구를 처음 로드하고 동의를 요청합니다. 스냅샷·태그·메모를 앱 전용 `appDataFolder`의 `igfc_snapshots.json` 한 파일에 저장합니다. **저장은 원격 백업을 현재 내용으로 교체**하며, **불러오기는 기기에 병합**합니다. 기기마다 저장하기 전에 불러와 병합하세요. 토큰은 영구 저장하지 않습니다.
 
