@@ -89,7 +89,7 @@ function renderDiff(){
   const s=data.snapshots.find(s=>String(s.id)===$('snapSel').value),el=$('diff');
   if(!s||!state.hasFollowers){el.textContent='이전 스냅샷을 선택하고 현재 팔로워 파일을 올리세요.';return}
   const d=diffSnapshots(s.followers,state.followers.map(e=>e.username)),badges=refollowed();
-  el.innerHTML='<p>'+esc(s.date)+' ~ '+esc($('exDate').value)+' 사이 · 언팔·삭제·비활성화·차단·아이디 변경일 수 있습니다.</p><h3>사라진 팔로워 '+d.lost.length+'명</h3><ul class="list">'+d.lost.map(u=>accountRow({username:u},badges)).join('')+'</ul><h3>새 팔로워 '+d.gained.length+'명</h3><ul class="list">'+d.gained.map(u=>accountRow({username:u},badges)).join('')+'</ul>';
+  el.innerHTML='<p>'+esc(s.date)+' ~ '+esc($('exDate').value)+' 사이 · 언팔·삭제·비활성화·차단·아이디 변경일 수 있습니다.</p><h3>사라진 팔로워 '+d.lost.length+'명</h3><div class="result-scroll"><ul class="list">'+d.lost.map(u=>accountRow({username:u},badges)).join('')+'</ul></div><h3>새 팔로워 '+d.gained.length+'명</h3><div class="result-scroll"><ul class="list">'+d.gained.map(u=>accountRow({username:u},badges)).join('')+'</ul></div>';
 }
 function countChart(){
   const s=data.snapshots;if(!s.length)return '<p class="muted">저장된 스냅샷이 없습니다.</p>';
