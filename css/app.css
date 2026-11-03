@@ -1,0 +1,16 @@
+
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:#f6f6f9;color:#222}
+.wrap{max-width:820px;margin:auto;padding:16px}h1{font-size:1.4rem;margin:.4em 0}
+.card{background:#fff;border-radius:14px;padding:16px;margin:12px 0;box-shadow:0 1px 4px #0001}
+.privacy{background:#e9f7ef;color:#1d6b3a;border-radius:10px;padding:10px;font-size:.9rem}
+#drop{border:2px dashed #bbb;border-radius:12px;padding:28px;text-align:center;cursor:pointer}#drop.over{border-color:#d62976;background:#fff0f6}
+button,.btn{background:#d62976;color:#fff;border:0;border-radius:8px;padding:8px 12px;font-size:.9rem;cursor:pointer;margin:2px}
+button.sec{background:#eee;color:#333}input,select{padding:8px;border:1px solid #ccc;border-radius:8px;font-size:.9rem}
+.tabs{display:flex;gap:4px;flex-wrap:wrap}.tabs button{background:#eee;color:#333}.tabs button.on{background:#d62976;color:#fff}
+.tools{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}.tools input{flex:1;min-width:140px}
+ul.list{list-style:none;padding:0;margin:0}ul.list li{display:flex;justify-content:space-between;padding:8px 4px;border-bottom:1px solid #eee;gap:8px}
+ul.list a{color:#d62976;text-decoration:none;font-weight:600;word-break:break-all}.muted{color:#888;font-size:.85rem}
+.msg{padding:10px;border-radius:8px;margin-top:8px}.err{background:#fdecea;color:#a12}.ok{background:#eef;color:#235}
+summary{cursor:pointer;font-weight:600}.hidden{display:none}h3{margin:.6em 0 .3em}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);max-width:92%;padding:12px 16px;border-radius:10px;color:#fff;z-index:9;box-shadow:0 4px 12px #0003}.tok{background:#1d7a46}.terr{background:#b3261e}.toast.hidden{display:none}
+button:disabled{opacity:.5;cursor:not-allowed}.wrap{max-width:1040px}.list li{flex-wrap:wrap;align-items:center}.note{display:flex;gap:5px;flex-wrap:wrap}.note input{width:150px}.badge{background:#e8f4ec;color:#176634;border-radius:6px;padding:3px 6px;font-size:.8rem}svg.chart{width:100%;height:auto;max-height:290px}svg text{font-size:11px;fill:#555}.chart-wrap{overflow:auto}.chart-wrap svg{min-width:540px}.tools label{display:flex;align-items:center;gap:4px}.tools input[type=checkbox]{min-width:0;flex:0}#timeline{max-height:400px;overflow:auto}a{color:#ad205f}.muted{color:#666}#drop:focus{outline:3px solid #d62976}

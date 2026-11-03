@@ -1,0 +1,54 @@
+{
+  "app": "igfc",
+  "version": 2,
+  "snapshots": [
+    {
+      "id": "fake-1",
+      "date": "2026-09-01",
+      "followers": [
+        "sample_ari",
+        "sample_return",
+        "sample_gone"
+      ],
+      "following": [
+        "sample_ari"
+      ]
+    },
+    {
+      "id": "fake-2",
+      "date": "2026-10-01",
+      "followers": [
+        "sample_ari",
+        "sample_bori"
+      ],
+      "following": [
+        "sample_ari",
+        "sample_brand"
+      ]
+    },
+    {
+      "id": "fake-3",
+      "date": "2026-11-01",
+      "followers": [
+        "sample_ari",
+        "sample_bori",
+        "sample_ghost",
+        "sample_return"
+      ],
+      "following": [
+        "sample_ari",
+        "sample_brand"
+      ]
+    }
+  ],
+  "tags": {
+    "sample_brand": {
+      "tag": "브랜드",
+      "memo": "가상의 브랜드 메모"
+    },
+    "sample_bori": {
+      "tag": "지인",
+      "memo": "샘플 전용"
+    }
+  }
+}
