@@ -213,3 +213,6 @@ dialog::backdrop { background: #11182780; backdrop-filter: blur(4px); }
 }
 @media (max-width: 420px) { .brand { font-size: 13px; } .app-header { gap: 8px; } .app-header button { font-size: 11px; padding: 8px; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; scroll-behavior: auto !important; } }
+
+.drive-resume-line { display: flex; justify-content: flex-end; }
+#driveResume { padding: 6px 10px; font-size: 12px; overflow-wrap: anywhere; text-align: left; }

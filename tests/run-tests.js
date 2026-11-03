@@ -21,7 +21,7 @@ async function page(options={}){
   w.setImmediate=setImmediate;w.clearImmediate=clearImmediate;w.TextDecoder=TextDecoder;w.swRegistrations=[];Object.defineProperty(w.navigator,'serviceWorker',{value:{register:async url=>{w.swRegistrations.push(url)}}});w.prompt=()=>null;w.confirm=()=>true;w.URL.createObjectURL=()=> 'blob:fake';w.URL.revokeObjectURL=()=>{};w.HTMLAnchorElement.prototype.click=function(){w.lastDownload=this.download};
   if(!w.HTMLDialogElement.prototype.showModal)w.HTMLDialogElement.prototype.showModal=function(){this.setAttribute('open','');this.dispatchEvent(new w.Event('beforetoggle'))};
   if(!w.HTMLDialogElement.prototype.close)w.HTMLDialogElement.prototype.close=function(){this.removeAttribute('open');this.dispatchEvent(new w.Event('close'))};
-  if(options.storage)for(const [key,value] of Object.entries(options.storage))w.localStorage.setItem(key,JSON.stringify(value));
+  if(options.storage)for(const [key,value] of Object.entries(options.storage))w.localStorage.setItem(key,typeof value==='string'?value:JSON.stringify(value));
   if(options.fetch)w.fetch=options.fetch;
   if(options.auth)w.google={accounts:{oauth2:{initTokenClient:o=>({requestAccessToken:params=>options.auth(o,params)})}}};
   if(options.noLocal)Object.defineProperty(w,'localStorage',{get(){throw new Error('blocked')}});
@@ -104,8 +104,8 @@ async function main(){
  // Google 호출은 가짜 GIS·fetch로 검사하며 실제 계정에 접근하지 않습니다.
  configured=true;const drive=await page(),d=drive.window,da=d.IGApp,ds=id=>d.document.getElementById(id);let calls=[],remote=read('sample_snapshot_backup_full.json');
  const waitSync=()=>new Promise(r=>setTimeout(r,2150));
- const mockFetch=async(url,opts={})=>{calls.push({url,opts});if(opts.method==='PATCH')remote=JSON.parse(opts.body);return {ok:true,json:async()=>url.includes('alt=media')?remote:url.includes('spaces=')?{files:[{id:'remote'}]}:{id:'created'}}};
- assert.equal(gisLoads,0);assert.equal(d.document.querySelector('script[src*="gsi"]'),null);
+ const mockFetch=async(url,opts={})=>{calls.push({url,opts});if(opts.method==='PATCH')remote=JSON.parse(opts.body);return {ok:true,json:async()=>url.includes('userinfo')?{email:'person@example.com'}:url.includes('alt=media')?remote:url.includes('spaces=')?{files:[{id:'remote'}]}:{id:'created'}}};
+ assert.equal(gisLoads,1);assert.ok(d.document.querySelector('script[src*="gsi"]'),'GIS is preloaded without requesting a token');
  d.fetch=mockFetch;ds('heroDrive').click();await tick();await tick();assert.equal(gisLoads,1);assert.equal(da.backup().snapshots.length,3);assert.equal(da.backup().tags.sample_brand.tag,'브랜드');
  assert.equal(d.localStorage.getItem('igfc_drive_connected'),'1');assert.match(ds('driveHint').textContent,/연결됨.*방금 동기화/);assert.equal(ds('hero').classList.contains('hidden'),true);
  assert.ok(calls.some(c=>c.opts.method==='PATCH'&&JSON.parse(c.opts.body).tags.sample_brand));
@@ -127,10 +127,24 @@ async function main(){
  d.fetch=async()=>({ok:false,status:403});await da.importBackup({snapshots:[],tags:{}});await waitSync();assert.match(ds('driveHint').textContent,/403/);assert.equal(ds('driveRetry').classList.contains('hidden'),false);
  d.fetch=mockFetch;ds('driveRetry').click();await tick();await tick();assert.match(ds('driveHint').textContent,/연결됨/);
  ds('driveDisconnect').click();assert.equal(d.localStorage.getItem('igfc_drive_connected'),null);calls=[];await da.importBackup({snapshots:[],tags:{}});await waitSync();assert.equal(calls.length,0);drive.window.close();
- // Reload restores saved data and requests a silent token, never interactive consent.
- let prompts=[];const reconnect=await page({storage:{igfc_drive_connected:1,igfc_snapshots:read('sample_snapshot_backup_full.json')},fetch:mockFetch,auth:(o,p)=>{prompts.push(p.prompt);o.callback({access_token:'silent',expires_in:3600})}});await tick();assert.deepEqual(prompts,['']);assert.equal(reconnect.window.document.getElementById('hero').classList.contains('hidden'),true);assert.match(reconnect.window.document.getElementById('driveHint').textContent,/연결됨/);reconnect.window.close();
- prompts=[];const needsLogin=await page({storage:{igfc_drive_connected:1},auth:(o,p)=>{prompts.push(p.prompt);if(p.prompt==='')o.callback({error:'interaction_required'});else o.callback({access_token:'interactive'})},fetch:mockFetch});await tick();
- const nl=needsLogin.window.document;assert.deepEqual(prompts,['']);assert.equal(nl.getElementById('heroDrive').textContent,'다시 연결');assert.equal(nl.getElementById('driveConnect').textContent,'다시 연결');nl.getElementById('heroDrive').click();await tick();await tick();assert.deepEqual(prompts,['','consent']);needsLogin.window.close();
+ // Returning accounts show a calm resume action and only authorize in a gesture.
+ let prompts=[];const reconnect=await page({storage:{igfc_drive_connected:1,igfc_drive_email:'person@example.com',igfc_snapshots:read('sample_snapshot_backup_full.json')},fetch:mockFetch,auth:(o,p)=>{prompts.push(p);o.callback({access_token:'resumed',expires_in:3600})}});await tick();
+ const rd=reconnect.window.document;assert.deepEqual(prompts,[]);assert.match(rd.getElementById('driveResume').textContent,/person@example.com/);assert.equal(rd.getElementById('driveResume').classList.contains('hidden'),false);
+ rd.getElementById('driveResume').click();assert.equal(prompts.length,1);assert.equal(prompts[0].prompt,'');assert.equal(prompts[0].login_hint,'person@example.com');await tick();assert.match(rd.getElementById('driveHint').textContent,/연결됨/);reconnect.window.close();
+ // Every meaningful interaction invokes reconnect in the same handler stack; failure only auto-attempts once.
+ for(const action of ['uploadAgain','drop','saveSnap','delete','tag','memo','heroImport','impBtn','nav','tab','dropKeyboard']){
+   prompts=[];const needsLogin=await page({storage:{igfc_drive_connected:1,igfc_drive_email:'person@example.com',igfc_snapshots:read('sample_snapshot_backup_full.json')},auth:(o,p)=>{prompts.push(p);o.callback({error:'interaction_required'})},fetch:mockFetch});
+   const nl=needsLogin.window.document;needsLogin.window.IGApp.selectTab('nfb');
+   let target=action==='delete'?nl.querySelector('[data-del]'):action==='nav'?nl.querySelector('[data-section]'):action==='tab'?nl.querySelector('.tabs button'):action==='dropKeyboard'?nl.getElementById('drop'):nl.getElementById(action);
+   if(action==='tag'||action==='memo'){
+     target=nl.createElement('input');target.className=action;const row=nl.createElement('div');row.className='note';row.append(target);nl.body.append(row);
+     target.dispatchEvent(new needsLogin.window.Event('change',{bubbles:true}));
+   }else if(action==='dropKeyboard')target.dispatchEvent(new needsLogin.window.KeyboardEvent('keydown',{key:'Enter',bubbles:true}));
+   else target.click();
+   assert.equal(prompts.length,1,action+' reconnects synchronously');assert.equal(prompts[0].login_hint,'person@example.com');await tick();
+   nl.querySelector('[data-section]').click();await tick();assert.equal(prompts.length,1,'only one automatic attempt');
+   nl.getElementById('driveResume').click();assert.equal(prompts.length,2,'explicit reconnect can retry');await tick();needsLogin.window.close();
+ }
  // 서비스 워커의 상대 경로 셸과 오프라인 응답을 검사합니다.
  const handlers={},cached=new Map();let shell=[];const cache={addAll:async list=>{shell=list;list.forEach(p=>cached.set(new URL(p,'https://example.test/instagram-manager/').href,{ok:true,cached:true}))},match:async req=>cached.get(req.url),put:async()=>{}};
  const context={URL,Set,caches:{open:async()=>cache,keys:async()=>[],delete:async()=>true},fetch:async()=>{throw Error('offline')},self:{registration:{scope:'https://example.test/instagram-manager/'},addEventListener:(k,f)=>handlers[k]=f,skipWaiting:async()=>{},clients:{claim:async()=>{}}}};

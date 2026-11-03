@@ -181,6 +181,11 @@ $('snapList').onclick=async e=>{const id=e.target.dataset.del;if(id&&confirm('�
 $('snapSel').onchange=renderDiff;$('exDate').onchange=()=>{renderDiff();renderList()};
 $('expSnap').onclick=()=>download('instagram_snapshots_'+$('exDate').value+'.json',JSON.stringify(backup(),null,2),'application/json');
 $('impBtn').onclick=()=>$('impFile').click();$('impFile').onchange=async function(){try{if(!this.files[0])return;const saved=await importBackup(JSON.parse((await fileText(this.files[0])).replace(/^\uFEFF/,'')));if(saved)toast('스냅샷과 메모를 가져왔습니다')}catch(e){toast('올바른 스냅샷 파일이 아닙니다: '+e.message,false)}this.value=''};
+// Capture meaningful interactions before handlers open a picker or await storage.
+const driveGestureSelector='#uploadAgain, #drop, #file, #saveSnap, [data-del], .note .tag, .note .memo, #heroImport, #impBtn, #impFile, [data-section], [data-go], .tabs button';
+document.addEventListener('click',e=>{if(e.target.closest(driveGestureSelector))window.IGDrive?.onGesture()},true);
+document.addEventListener('change',e=>{if(e.target.closest('.note .tag, .note .memo, #file, #impFile'))window.IGDrive?.onGesture()},true);
+document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.closest('#drop'))window.IGDrive?.onGesture()},true);
 const ready=loadStore();
 window.IGApp={ready,state,handle,backup,importBackup,toast,selectTab,selectSection,currentList,get storageMode(){return mode}};
 if('serviceWorker' in navigator&&(location.protocol==='https:'||['localhost','127.0.0.1','[::1]'].includes(location.hostname)))navigator.serviceWorker.register('./sw.js').catch(()=>toast('오프라인 준비에 실패했습니다. 온라인에서는 계속 사용할 수 있습니다.',false));
