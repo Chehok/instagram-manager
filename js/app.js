@@ -82,7 +82,7 @@ function refollowed(){const set=new Set(timeline(data.snapshots).filter(e=>e.ref
 function accountRow(e,badges){
   const u=e.username,key=accountKey(u),note=data.tags[key]||{tag:'',memo:''};
   const options=['','지인','브랜드','무시'];if(note.tag&&!options.includes(note.tag))options.push(note.tag);options.push('__custom');
-  return '<li><a href="'+esc(safeProfile(u))+'" target="_blank" rel="noopener noreferrer">@'+esc(u)+'</a>'+(badges?.has(key)?'<span class="badge">재팔로우</span>':'')+'<span class="muted">'+fmtDate(e.timestamp)+'</span><div class="note" data-user="'+esc(key)+'"><select class="tag" aria-label="'+esc(u)+' 태그">'+options.map(t=>'<option value="'+esc(t)+'"'+(t===note.tag?' selected':'')+'>'+esc(t==='__custom'?'직접 입력':t||'태그 없음')+'</option>').join('')+'</select><input class="memo" aria-label="'+esc(u)+' 메모" placeholder="메모" maxlength="2000" value="'+esc(note.memo)+'"></div></li>';
+  return '<li class="account-row"><span class="avatar" aria-hidden="true">'+esc(Array.from(u)[0].toUpperCase())+'</span><a href="'+esc(safeProfile(u))+'" target="_blank" rel="noopener noreferrer">@'+esc(u)+'</a>'+(badges?.has(key)?'<span class="badge">재팔로우</span>':'')+'<span class="muted account-date">'+fmtDate(e.timestamp)+'</span><div class="note" data-user="'+esc(key)+'"><select class="tag" aria-label="'+esc(u)+' 태그">'+options.map(t=>'<option value="'+esc(t)+'"'+(t===note.tag?' selected':'')+'>'+esc(t==='__custom'?'직접 입력':t||'태그 없음')+'</option>').join('')+'</select><input class="memo" aria-label="'+esc(u)+' 메모" placeholder="메모" maxlength="2000" value="'+esc(note.memo)+'"></div></li>';
 }
 function renderList(){
   if(!state.res)return;
@@ -90,7 +90,7 @@ function renderList(){
   $('listHint').textContent=state.tab==='ghost'?'추정: 자료에서 반응 또는 DM 연결이 없는 팔로워입니다. 표시 이름 불일치·자료 누락에 유의하세요.':state.tab==='other'?(state.other[$('otherKind').value]?'제공된 파일에 있는 목록입니다.':'이 목록 파일이 제공되지 않았습니다.'):'태그와 메모는 기기 저장 및 JSON·Drive 백업에 포함됩니다.';
   const list=currentList(),badges=refollowed();$('count').textContent=list.length+'명';$('list').innerHTML=list.map(e=>accountRow(e,badges)).join('')||'<li class="muted">없습니다</li>';
 }
-function refresh(){state.res=compare(state.followers,state.following);$('results').classList.remove('hidden');$('summary').textContent='팔로워 '+state.followers.length+' · 팔로잉 '+state.following.length+' · 맞팔 안 함 '+state.res.notFollowingBack.length+' · 나만 팔로우받음 '+state.res.fans.length;renderList();renderDiff()}
+function refresh(){state.res=compare(state.followers,state.following);$('results').classList.remove('hidden');$('summary').innerHTML=[['팔로워',state.hasFollowers?state.followers.length:'—'],['팔로잉',state.hasFollowing?state.following.length:'—'],['맞팔 안 함',state.hasFollowers&&state.hasFollowing?state.res.notFollowingBack.length:'—'],['나만 팔로우받음',state.hasFollowers&&state.hasFollowing?state.res.fans.length:'—']].map(([label,count])=>'<div class="stat-card"><span>'+label+'</span><strong>'+count.toLocaleString('ko-KR')+'</strong></div>').join('');renderList();renderDiff()}
 function renderDiff(){
   const s=data.snapshots.find(s=>String(s.id)===$('snapSel').value),el=$('diff');
   if(!s||!state.hasFollowers){el.textContent='이전 스냅샷을 선택하고 현재 팔로워 파일을 올리세요.';return}
@@ -109,7 +109,7 @@ function countChart(){
 }
 function renderSnaps(){
   const s=data.snapshots,previous=$('snapSel').value;if(s.length&&!state.res){state.res=compare(state.followers,state.following);$('results').classList.remove('hidden');selectTab('track');}
-  $('snapList').innerHTML=s.map(x=>'<li><span>'+esc(x.date)+' · 팔로워 '+x.followers.length+'명 · 팔로잉 '+(x.following?x.following.length+'명':'정보 없음')+'</span><button class="sec" data-del="'+esc(x.id)+'">삭제</button></li>').join('')||'<li>저장된 스냅샷이 없습니다</li>';
+  $('snapList').innerHTML=s.map(x=>'<li><span>'+esc(x.date)+' · 팔로워 '+x.followers.length+'명 · 팔로잉 '+(x.following?x.following.length+'명':'정보 없음')+'</span><button class="sec ghost" data-del="'+esc(x.id)+'">삭제</button></li>').join('')||'<li>저장된 스냅샷이 없습니다</li>';
   $('snapSel').innerHTML=s.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.date)+'</option>').join('');$('snapSel').value=s.some(x=>String(x.id)===previous)?previous:String(s.at(-1)?.id||'');
   const events=timeline(s);$('timeline').innerHTML=events.map(e=>'<li><span>@'+esc(e.username)+' · '+esc(e.from)+' ~ '+esc(e.to)+' · '+e.type+'</span>'+(e.refollowed?'<span class="badge">재팔로우</span>':'')+'</li>').join('')||'<li>타임라인에는 날짜가 다른 스냅샷이 2개 이상 필요합니다.</li>';
   $('countChart').innerHTML=countChart();renderDiff();renderList();
@@ -131,7 +131,7 @@ function selectTab(tab){state.tab=tab;document.querySelectorAll('.tabs button').
 $('drop').onclick=()=>$('file').click();$('drop').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('file').click()}};
 for(const event of ['dragover','dragenter'])$('drop').addEventListener(event,e=>{e.preventDefault();$('drop').classList.add('over')});
 for(const event of ['dragleave','drop'])$('drop').addEventListener(event,e=>{e.preventDefault();$('drop').classList.remove('over')});
-$('drop').addEventListener('drop',e=>handle(e.dataTransfer.files));$('file').onchange=function(){handle(this.files);this.value=''};
+$('drop').addEventListener('drop',e=>handle(Array.from(e.dataTransfer.files)));$('file').onchange=function(){handle(Array.from(this.files));this.value=''};
 for(const id of ['q','sort','hideTagged','otherKind'])$(id).addEventListener(id==='q'?'input':'change',renderList);
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>selectTab(b.dataset.t));
 $('results').addEventListener('change',async e=>{

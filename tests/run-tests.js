@@ -66,8 +66,19 @@ async function main(){
  $('snapList').querySelector('[data-del="fake-1"]').click();await tick();assert.equal(app.backup().snapshots.length,3);
  // 파일 선택 입력 경로로도 이전 단일 JSON / HTML 기능을 검증합니다.
  const followers=new w.File([fs.readFileSync(path.join(root,'samples/followers_1.json'))],'followers_1.json');
- Object.defineProperty($('file'),'files',{value:[followers],configurable:true});$('file').dispatchEvent(new w.Event('change'));await tick();
+ // Chromium clears the live FileList when the input is reset, before handle resumes.
+ const selectedFiles=[followers];let inputResets=0;
+ Object.defineProperty($('file'),'files',{value:selectedFiles,configurable:true});
+ Object.defineProperty($('file'),'value',{set(value){assert.equal(value,'');selectedFiles.length=0;inputResets++},configurable:true});
+ $('file').dispatchEvent(new w.Event('change'));assert.equal(inputResets,1);assert.equal(selectedFiles.length,0);await tick();
+ assert.match($('status').textContent,/^불러오기 완료/);assert.equal(app.state.followers.length,read('followers_1.json').length);
+ delete $('file').files;delete $('file').value;
  assert.equal($('ghostTab').disabled,true);assert.match($('activityHint').textContent,/자료가 없습니다/);
+ // A drop's FileList is only available during event dispatch.
+ const droppedFiles=[followers],dropEvent=new w.Event('drop',{cancelable:true});
+ Object.defineProperty(dropEvent,'dataTransfer',{value:{files:droppedFiles}});
+ $('drop').dispatchEvent(dropEvent);droppedFiles.length=0;await tick();
+ assert.match($('status').textContent,/^불러오기 완료/);assert.equal(app.state.followers.length,read('followers_1.json').length);
  await app.handle([new w.File([fs.readFileSync(path.join(root,'samples/sample_export.zip'))],'sample_export.zip')]);assert.ok(app.state.followers.length);
  assert.equal(w.parseHtmlList('<a href="https://www.instagram.com/sample_html/">sample_html</a>').length,1);
  await app.handle([new w.File(['[]'],'followers_1.json')]);$('exDate').value='2027-01-01';$('saveSnap').click();await tick();assert.equal(app.backup().snapshots.at(-1).followers.length,0);
