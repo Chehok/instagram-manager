@@ -132,7 +132,13 @@ async function main(){
  const rd=reconnect.window.document;assert.deepEqual(prompts,[]);assert.match(rd.getElementById('driveResume').textContent,/person@example.com/);assert.equal(rd.getElementById('driveResume').classList.contains('hidden'),false);
  rd.getElementById('driveResume').click();assert.equal(prompts.length,1);assert.equal(prompts[0].prompt,'');assert.equal(prompts[0].login_hint,'person@example.com');await tick();assert.match(rd.getElementById('driveHint').textContent,/연결됨/);reconnect.window.close();
  // Every meaningful interaction invokes reconnect in the same handler stack; failure only auto-attempts once.
- for(const action of ['uploadAgain','drop','saveSnap','delete','tag','memo','heroImport','impBtn','nav','tab','dropKeyboard']){
+ for(const action of ['uploadAgain','drop','dropKeyboard']){
+   prompts=[];const up=await page({storage:{igfc_drive_connected:1,igfc_drive_email:'person@example.com',igfc_snapshots:read('sample_snapshot_backup_full.json')},auth:(o,p)=>{prompts.push(p);o.callback({error:'interaction_required'})},fetch:mockFetch});
+   const ud=up.window.document;ud.getElementById('file').click=()=>{};const t=ud.getElementById(action==='dropKeyboard'?'drop':action);
+   if(action==='dropKeyboard')t.dispatchEvent(new up.window.KeyboardEvent('keydown',{key:'Enter',bubbles:true}));else t.click();
+   assert.equal(prompts.length,0,action+' must not trigger Drive reconnect');await tick();up.window.close();
+ }
+ for(const action of ['saveSnap','delete','tag','memo','heroImport','impBtn','nav','tab']){
    prompts=[];const needsLogin=await page({storage:{igfc_drive_connected:1,igfc_drive_email:'person@example.com',igfc_snapshots:read('sample_snapshot_backup_full.json')},auth:(o,p)=>{prompts.push(p);o.callback({error:'interaction_required'})},fetch:mockFetch});
    const nl=needsLogin.window.document;needsLogin.window.IGApp.selectTab('nfb');
    let target=action==='delete'?nl.querySelector('[data-del]'):action==='nav'?nl.querySelector('[data-section]'):action==='tab'?nl.querySelector('.tabs button'):action==='dropKeyboard'?nl.getElementById('drop'):nl.getElementById(action);
@@ -155,3 +161,4 @@ async function main(){
 }
 const deadline=setTimeout(()=>{console.error('테스트 시간 초과: 완료되지 않은 비동기 작업');process.exit(1)},45000);
 main().catch(e=>{console.error(e);process.exitCode=1}).finally(()=>clearTimeout(deadline));
+
