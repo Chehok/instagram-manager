@@ -79,16 +79,22 @@ function normalizeBackup(input){
   });
   var tags={};
   if(data.tags&&typeof data.tags==='object')Object.entries(data.tags).forEach(([u,v])=>{
-    if(v&&typeof v==='object')Object.defineProperty(tags,accountKey(u),{value:{tag:String(v.tag||'').slice(0,100),memo:String(v.memo||'').slice(0,2000)},enumerable:true,configurable:true,writable:true});
+    if(v&&typeof v==='object')Object.defineProperty(tags,accountKey(u),{value:{tag:String(v.tag||'').slice(0,100),memo:String(v.memo||'').slice(0,2000),updatedAt:Number.isFinite(v.updatedAt)?v.updatedAt:0},enumerable:true,configurable:true,writable:true});
   });
-  return {app:'igfc',version:2,snapshots,tags};
+  var tombstones={};
+  if(data.tombstones&&typeof data.tombstones==='object')Object.entries(data.tombstones).forEach(([id,t])=>{if(Number.isFinite(t)&&t>0)Object.defineProperty(tombstones,id,{value:t,enumerable:true,writable:true,configurable:true})});
+  return {app:'igfc',version:3,snapshots:snapshots.filter(s=>!Object.hasOwn(tombstones,s.id)),tags,tombstones};
 }
 function mergeBackups(a,b){
   a=normalizeBackup(a);b=normalizeBackup(b);
-  var snapshots=a.snapshots.slice();
-  b.snapshots.forEach(s=>{if(!snapshots.some(x=>String(x.id)===String(s.id)||x.date===s.date))snapshots.push(s)});
+  var tombstones={...a.tombstones};
+  Object.entries(b.tombstones).forEach(([id,t])=>Object.defineProperty(tombstones,id,{value:Math.max(t,Object.hasOwn(tombstones,id)?tombstones[id]:0),enumerable:true,writable:true,configurable:true}));
+  var snapshots=a.snapshots.filter(s=>!Object.hasOwn(tombstones,s.id));
+  b.snapshots.forEach(s=>{if(!Object.hasOwn(tombstones,s.id)&&!snapshots.some(x=>x.id===s.id||x.date===s.date))snapshots.push(s)});
   snapshots.sort((x,y)=>x.date.localeCompare(y.date));
-  return {app:'igfc',version:2,snapshots,tags:{...a.tags,...b.tags}};
+  var tags={...a.tags};
+  Object.entries(b.tags).forEach(([u,v])=>{if(!Object.hasOwn(tags,u)||v.updatedAt>=tags[u].updatedAt)Object.defineProperty(tags,u,{value:v,enumerable:true,writable:true,configurable:true})});
+  return {app:'igfc',version:3,snapshots,tags,tombstones};
 }
 function barChart(labels,values,label){
   if(!labels.length)return '<p class="muted">집계할 활동이 없습니다.</p>';

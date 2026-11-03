@@ -4,31 +4,69 @@
 <script src="vendor/jszip.min.js"></script>
 <link rel="stylesheet" href="css/app.css"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#d62976">  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-</head><body><div id="toast" class="toast hidden" role="status"></div><main class="wrap">
-<header class="app-header"><a class="brand" href="./" aria-label="Instagram Manager 홈"><img src="icons/icon.svg" width="40" height="40" alt=""><span>Instagram Manager<small>인스타그램 관리도구</small></span></a><span class="header-label">나의 연결을 한눈에</span></header>
-<section class="intro"><p class="eyebrow">MY INSTAGRAM, ORGANIZED</p><h1>나의 연결을 더 선명하게.</h1><p class="muted">팔로워부터 활동 기록까지, 내 데이터로 차분하게 살펴보세요.</p></section>
-<div class="privacy"><span class="privacy-title">내 데이터는 내 브라우저에.</span> 파일 분석은 이 브라우저에서 처리됩니다. 스냅샷·메모는 기기에 저장되며, 저장소가 없으면 메모리에만 남습니다. Google Drive 버튼을 사용할 때만 스냅샷·메모가 내 Drive로 전송됩니다. 익명 방문 수만 GoatCounter로 집계하며, 인스타그램 데이터는 절대 전송되지 않습니다.</div>
-<details class="card guide"><summary>인스타그램 데이터 받는 방법 <span class="muted">다운로드 안내</span></summary>
-<p class="muted">메뉴 이름·위치는 앱 버전에 따라 조금 다를 수 있습니다. 대략적인 경로입니다.</p>
-<ol><li>인스타그램 앱 → 프로필 → ☰ → <b>설정</b></li><li><b>계정 센터</b> → <b>내 정보 및 권한</b></li><li><b>내 정보 다운로드</b> → 다운로드 또는 전송</li><li><b>일부 정보</b> 선택 → <b>팔로워 및 팔로잉</b> 체크. 활동 분석에는 <b>좋아요, 댓글, 스토리 활동, 메시지</b>도 선택</li><li><b>기기로 다운로드</b> → 기간: 전체 기간, <b>형식: JSON</b> 선택 → 요청</li><li>준비 완료 알림(이메일)이 오면 zip을 다운로드해 아래에 올리세요.</li></ol></details>
-<section class="card upload-card" aria-labelledby="uploadTitle"><div class="section-heading"><div><p class="eyebrow">01 / IMPORT</p><h2 id="uploadTitle">데이터 불러오기</h2></div><span class="muted">ZIP · JSON · HTML</span></div><div id="drop" role="button" tabindex="0" aria-label="인스타그램 파일 선택">
-<svg class="upload-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V3m-5 5 5-5 5 5M4 15v5a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-5"/></svg>
-<strong>파일을 여기에 놓아주세요</strong><span class="muted">zip 파일 또는 followers_*.json / following.json</span><span class="btn primary">파일 선택하기 <span aria-hidden="true">↗</span></span><span class="muted drop-help">HTML도 지원하지만, 정확한 분석을 위해 JSON을 권장해요.</span></div>
+</head><body>
+<div id="toast" class="toast hidden" role="status"></div>
+<main class="wrap">
+<section id="hero" class="hero" aria-labelledby="uploadTitle">
+  <img class="hero-icon" src="icons/icon.svg" width="64" height="64" alt="">
+  <h1 id="uploadTitle">Instagram Manager</h1>
+  <p class="tagline muted">내 데이터로 살펴보는 나의 인스타그램.</p>
+  <div id="drop" role="button" tabindex="0" aria-label="인스타그램 파일 선택">
+    <svg class="upload-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V3m-5 5 5-5 5 5M4 15v5a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-5"/></svg>
+    <strong>파일을 여기에 놓아주세요</strong>
+    <span class="muted">ZIP · JSON · HTML</span>
+    <span class="btn primary">파일 선택하기 ↗</span>
+  </div>
+  <div class="hero-links"><button id="heroImport" class="ghost">백업 불러오기</button><button id="heroDrive" class="ghost">구글 드라이브 연결</button></div>
+  <button class="link-button ghost" data-dialog="guideDialog" aria-haspopup="dialog">데이터 받는 법</button>
+  <p class="privacy">파일은 브라우저에서 분석해요 · Drive 연결 시 백업만 동기화해요.</p>
+</section>
 <input type="file" id="file" multiple accept=".zip,.json,.html" class="hidden">
-<div class="upload-footer"><label for="exDate">데이터 내보내기 날짜</label><input type="date" id="exDate"></div><div id="status" role="status"></div></section>
-<div id="results" class="card hidden">
-<div class="section-heading"><div><p class="eyebrow">02 / CONNECTIONS</p><h2>나의 연결</h2></div></div><div id="summary" class="muted" aria-live="polite"></div>
-<div class="tabs" role="group" aria-label="연결 목록"><button data-t="nfb" class="on" aria-pressed="true">맞팔 안 하는 계정</button><button data-t="fan">나만 팔로우받는 계정</button><button data-t="track">언팔 추적</button><button data-t="ghost" id="ghostTab" disabled>유령 팔로워 (추정)</button><button data-t="other">기타 목록</button></div>
+<header id="resultsHeader" class="app-header hidden"><a class="brand" href="./"><img src="icons/icon.svg" width="32" height="32" alt=""><span>Instagram Manager</span></a><button id="uploadAgain" class="secondary">다른 파일 올리기</button></header>
+<div id="status" role="status"></div>
+<div id="results" class="workspace hidden">
+<nav class="section-nav" aria-label="분석 섹션">
+  <button data-section="overview" aria-controls="overviewPane" aria-current="page">요약</button>
+  <button data-section="relationships" aria-controls="relationshipsPane">팔로우 관계</button>
+  <button data-section="track" aria-controls="trackPane">언팔 추적</button>
+  <button data-section="activity" aria-controls="activityPane">활동 분석</button>
+  <button data-section="settings" aria-controls="settingsPane">설정·백업</button>
+</nav>
+<div class="section-content">
+<section id="overviewPane" class="section-panel" data-panel="overview" aria-labelledby="overviewTitle">
+  <h2 id="overviewTitle">요약</h2><p class="muted">나의 팔로워와 팔로잉을 한눈에.</p>
+  <div id="summary" aria-live="polite"></div>
+  <div class="card overview-card"><h3>연결의 변화가 궁금한가요?</h3><p class="muted">스냅샷을 쌓아 팔로워 변화를 비교해 보세요.</p><button class="secondary" data-go="track">언팔 추적 보기 →</button></div>
+</section>
+<section id="relationshipsPane" class="section-panel hidden" data-panel="relationships" aria-labelledby="relationshipsTitle">
+  <div class="section-heading"><h2 id="relationshipsTitle">팔로우 관계</h2><button class="ghost help" data-dialog="relationshipHelp" aria-haspopup="dialog" aria-label="목록 도움말">ⓘ</button></div>
+  <div class="card"><div class="tabs" role="group" aria-label="연결 목록"><button data-t="nfb" class="on" aria-pressed="true">맞팔 안 하는 계정</button><button data-t="fan" aria-pressed="false">나만 팔로우받는 계정</button><button data-t="ghost" id="ghostTab" aria-pressed="false" disabled>유령 팔로워 (추정)</button><button data-t="other" aria-pressed="false">기타 목록</button></div>
 <div id="listPane"><div class="tools"><input id="q" type="search" placeholder="아이디 검색" aria-label="아이디 검색"><select id="sort" aria-label="목록 정렬"><option value="date-desc">팔로우 날짜 최신순</option><option value="date-asc">팔로우 날짜 오래된순</option><option value="name">아이디순</option></select>
 <button class="sec secondary" id="copyCsv">CSV 복사</button><button class="sec secondary" id="dlCsv">CSV 다운로드</button></div><div class="tools"><label><input type="checkbox" id="hideTagged">태그 있는 계정 숨기기</label><select id="otherKind" aria-label="기타 목록 종류"><option value="pending">보낸 팔로우 요청</option><option value="unfollowed">최근 언팔로우</option><option value="blocked">차단한 계정</option><option value="restricted">제한한 계정</option><option value="close">친한 친구</option></select></div><p id="listHint" class="muted"></p><div id="count"></div><div class="result-scroll"><ul class="list" id="list"></ul></div></div>
-<div id="trackPane" class="hidden"><p class="muted">현재 팔로워 목록을 스냅샷으로 저장해 두면, 다음에 새 데이터를 올렸을 때 누가 사라졌는지(언팔·계정 삭제·차단 등) 확인할 수 있습니다.</p>
-<button class="primary" id="saveSnap">현재 팔로워를 스냅샷으로 저장</button>
-<div class="tools">비교할 이전 스냅샷: <select id="snapSel"></select></div><div id="diff"></div><h3>팔로워·팔로잉 변화</h3><div id="countChart" class="chart-wrap result-scroll"></div><h3>계정별 변화 타임라인</h3><p class="muted">표시한 두 날짜 사이에 변화가 관측되었습니다. 정확한 언팔 시각은 알 수 없습니다. 내보내기에는 고정 계정 ID가 없어 아이디 변경 여부를 판별할 수 없습니다.</p><div class="result-scroll"><ul id="timeline" class="list"></ul></div></div></div>
-<section class="card activity-card" aria-labelledby="activityTitle"><p class="eyebrow">03 / ACTIVITY</p><h2 id="activityTitle">관심 많은 계정 순위</h2><p id="activityHint" class="muted"></p><h3>내가 많이 반응하는 계정</h3><div class="result-scroll"><ul id="outRank" class="list"></ul></div><h3>나에게 DM을 많이 보낸 계정</h3><p class="muted">DM 이름은 표시 이름이며 아이디와 다를 수 있습니다. 반응 순위에는 좋아요·댓글·스토리 활동만 합산합니다.</p><div class="result-scroll"><ul id="dmRank" class="list"></ul></div><label>메시지에서 내 표시 이름: <select id="me" aria-label="메시지에서 내 표시 이름"></select></label><p id="meHint" class="muted"></p><h3>내 활동 시간대 (기기 현지 시간)</h3><div id="hourChart" class="chart-wrap result-scroll"></div><h3>내 활동 월별 통계</h3><div id="monthChart" class="chart-wrap result-scroll"></div><p class="muted">좋아요·댓글·내가 보낸 메시지의 유효한 타임스탬프만 집계합니다. 유령 팔로워는 제공된 자료에서 반응·DM 연결이 전혀 발견되지 않은 계정의 추정치입니다. DM 표시 이름과 아이디가 다르거나 자료가 누락되면 틀릴 수 있습니다.</p></section>
-<section class="card snapshot-card" aria-labelledby="snapshotTitle"><p class="eyebrow">04 / ARCHIVE</p><h2 id="snapshotTitle">저장된 스냅샷 관리</h2><div class="result-scroll"><ul class="list" id="snapList"></ul></div>
-<div class="tools"><button class="sec secondary" id="expSnap">스냅샷 내보내기(JSON)</button><button class="sec secondary" id="impBtn">스냅샷 가져오기</button><input type="file" id="impFile" accept=".json" class="hidden"></div><div class="tools"><button class="secondary" id="driveSave" disabled>Drive 저장 · 설정 필요</button><button class="secondary" id="driveLoad" disabled>Drive 불러오기 · 설정 필요</button><button class="link-button ghost" id="driveInfoBtn" type="button" aria-haspopup="dialog">내 드라이브 어디에 저장되나요?</button></div><p id="driveHint" class="muted">config.js의 Google 클라이언트 ID를 설정하면 동기화를 사용할 수 있습니다.</p></section>
-<footer class="app-footer">Instagram Manager <span>내 데이터를 이해하는 작은 도구</span></footer></main>
-<dialog id="driveInfoDialog" aria-labelledby="driveInfoTitle"><div class="dialog-content"><div class="dialog-heading"><h2 id="driveInfoTitle">내 드라이브 어디에 저장되나요?</h2><button class="sec secondary" id="driveInfoClose" type="button" aria-label="안내 닫기">닫기</button></div><ol><li>스냅샷은 내 드라이브의 보이는 폴더가 아니라 이 앱 전용 숨김 공간(<code>appDataFolder</code>)에 <code>igfc_snapshots.json</code> 파일 하나로 저장돼요.</li><li>내 드라이브 목록에는 보이지 않고, 다른 앱이나 다른 사람은 읽을 수 없어요. 이 앱도 드라이브의 다른 파일에는 접근할 수 없어요.</li><li>저장되는 내용은 스냅샷(날짜별 팔로워 아이디 목록)과 태그·메모예요. 비밀번호나 인스타그램 로그인 정보는 저장하지 않아요.</li><li>확인·삭제: drive.google.com → 오른쪽 위 톱니바퀴(설정) → 설정 → 앱 관리 → 이 앱의 ‘옵션’ → ‘숨겨진 앱 데이터 삭제’ (메뉴 이름은 Google 사정에 따라 조금 다를 수 있어요). 앱 연결 해제는 <a href="https://myaccount.google.com/connections" target="_blank" rel="noopener">myaccount.google.com/connections</a> (타사 앱 및 서비스)에서 할 수 있어요.</li><li>로그인할 때 ‘Google에서 확인하지 않은 앱’ 경고가 뜰 수 있어요. 개인이 만든 테스트 단계 앱이라 뜨는 것이고, ‘계속’을 눌러 진행하면 돼요.</li></ol></div></dialog>
+</div>
+</section>
+<section id="trackPane" class="section-panel hidden" data-panel="track" aria-labelledby="trackTitle">
+  <div class="section-heading"><h2 id="trackTitle">언팔 추적</h2><button class="ghost help" data-dialog="trackHelp" aria-haspopup="dialog" aria-label="추적 도움말">ⓘ</button></div>
+  <div class="card"><div class="tools"><label for="exDate">데이터 내보내기 날짜</label><input type="date" id="exDate"></div><button class="primary" id="saveSnap">현재 팔로워를 스냅샷으로 저장</button>
+<div class="tools"><label for="snapSel">이전 스냅샷</label><select id="snapSel"></select></div><div id="diff"></div><h3>팔로워·팔로잉 변화</h3><div id="countChart" class="chart-wrap result-scroll"></div><h3>계정별 변화 타임라인</h3><div class="result-scroll"><ul id="timeline" class="list"></ul></div></div>
+</section>
+<section id="activityPane" class="section-panel hidden" data-panel="activity" aria-labelledby="activityTitle">
+  <div class="section-heading"><h2 id="activityTitle">활동 분석</h2><button class="ghost help" data-dialog="activityHelp" aria-haspopup="dialog" aria-label="집계 도움말">ⓘ</button></div>
+  <div class="card activity-card"><p id="activityHint" class="muted"></p><h3>내가 많이 반응하는 계정</h3><div class="result-scroll"><ul id="outRank" class="list"></ul></div><h3>나에게 DM을 많이 보낸 계정</h3><div class="result-scroll"><ul id="dmRank" class="list"></ul></div><label>메시지에서 내 표시 이름: <select id="me" aria-label="메시지에서 내 표시 이름"></select></label><p id="meHint" class="muted"></p><h3>내 활동 시간대 (기기 현지 시간)</h3><div id="hourChart" class="chart-wrap result-scroll"></div><h3>내 활동 월별 통계</h3><div id="monthChart" class="chart-wrap result-scroll"></div></div>
+</section>
+<section id="settingsPane" class="section-panel hidden" data-panel="settings" aria-labelledby="snapshotTitle">
+  <h2 id="snapshotTitle">설정·백업</h2>
+  <div class="card snapshot-card"><h3>저장된 스냅샷</h3><div class="result-scroll"><ul class="list" id="snapList"></ul></div>
+<div class="tools"><button class="sec secondary" id="expSnap">JSON 백업 내보내기</button><button class="sec secondary" id="impBtn">백업 불러오기</button><input type="file" id="impFile" accept=".json" class="hidden"></div></div>
+  <div class="card drive-card"><h3>구글 드라이브</h3><div class="tools"><button class="secondary" id="driveConnect">구글 드라이브 연결</button><button class="ghost hidden" id="driveDisconnect">연결 해제</button><button class="link-button ghost" id="driveInfoBtn" type="button" aria-haspopup="dialog">동기화 안내</button></div><div class="drive-status"><span id="driveHint" role="status"></span><button id="driveRetry" class="ghost hidden">다시 시도</button></div></div>
+  <p class="muted privacy-detail">기기에 저장 · Drive 연결 시 백업 동기화 · 익명 방문 통계: GoatCounter</p>
+</section>
+</div></div></main>
+<dialog id="guideDialog" aria-labelledby="guideTitle"><div class="dialog-content"><div class="dialog-heading"><h2 id="guideTitle">데이터 받는 법</h2><button data-close>닫기</button></div><p class="muted">앱 버전에 따라 메뉴 이름·위치가 다를 수 있어요.</p><ol><li>인스타그램 앱 → 프로필 → ☰ → <b>설정</b></li><li><b>계정 센터</b> → <b>내 정보 및 권한</b></li><li><b>내 정보 다운로드</b> → 다운로드 또는 전송</li><li><b>일부 정보</b> 선택 → <b>팔로워 및 팔로잉</b> 체크. 활동 분석에는 <b>좋아요, 댓글, 스토리 활동, 메시지</b>도 선택</li><li><b>기기로 다운로드</b> → 기간: 전체 기간, <b>형식: JSON</b> 선택 → 요청</li><li>준비 완료 알림(이메일)이 오면 zip을 다운로드해 아래에 올리세요.</li></ol></div></dialog>
+<dialog id="relationshipHelp" aria-labelledby="relationshipHelpTitle"><div class="dialog-content"><div class="dialog-heading"><h2 id="relationshipHelpTitle">팔로우 관계 안내</h2><button data-close>닫기</button></div><p>태그와 메모는 기기에 저장되며 JSON·Drive 백업에 포함됩니다.</p><p>유령 팔로워는 제공된 자료에 반응·DM 연결이 없는 계정의 추정치입니다. DM 표시 이름이 아이디와 다르거나 자료가 누락되면 틀릴 수 있습니다.</p></div></dialog>
+<dialog id="trackHelp" aria-labelledby="trackHelpTitle"><div class="dialog-content"><div class="dialog-heading"><h2 id="trackHelpTitle">언팔 추적 안내</h2><button data-close>닫기</button></div><p>현재 팔로워를 스냅샷으로 저장한 뒤, 새 데이터를 올려 이전 기록과 비교하세요.</p><p>변화는 표시한 두 날짜 사이에 관측되었습니다. 정확한 언팔 시각은 알 수 없으며, 계정 삭제·차단·아이디 변경일 수도 있습니다. 내보내기에는 고정 계정 ID가 없어 아이디 변경을 판별할 수 없습니다.</p></div></dialog>
+<dialog id="activityHelp" aria-labelledby="activityHelpTitle"><div class="dialog-content"><div class="dialog-heading"><h2 id="activityHelpTitle">활동 집계 안내</h2><button data-close>닫기</button></div><p>반응 순위에는 좋아요·댓글·스토리 활동을 합산합니다. DM 이름은 표시 이름이며 아이디와 다를 수 있습니다.</p><p>시간 통계는 좋아요·댓글·내가 보낸 메시지의 유효한 타임스탬프만 집계합니다.</p><p>여러 대화에서 자주 등장하는 발신자를 내 이름으로 추정합니다. 동명이인·그룹 대화로 틀릴 수 있으니 직접 확인하세요. 선택하지 않으면 보낸 메시지 통계는 제외됩니다.</p></div></dialog>
+<dialog id="driveInfoDialog" aria-labelledby="driveInfoTitle"><div class="dialog-content"><div class="dialog-heading"><h2 id="driveInfoTitle">내 드라이브 어디에 저장되나요?</h2><button class="sec secondary" id="driveInfoClose" type="button" aria-label="안내 닫기">닫기</button></div><p>연결하면 Drive의 스냅샷·태그·메모를 기기 기록과 병합하고, 변경 후 자동으로 동기화합니다. 삭제 기록도 함께 저장되어 다른 기기에서 삭제한 스냅샷이 되살아나지 않습니다.</p><p>백업은 앱 전용 숨김 공간(appDataFolder)의 igfc_snapshots.json에 저장됩니다. 이 앱은 Drive의 다른 파일에 접근하지 않습니다.</p><p>다음 방문에는 자동 연결을 시도합니다. 인증이 필요하면 ‘다시 연결’을 누르세요. ‘연결 해제’는 자동 동기화를 중지하며 저장된 백업은 유지합니다.</p><p>Drive 설정 → 앱 관리에서 숨겨진 앱 데이터를 삭제할 수 있습니다. 계정 권한은 <a href="https://myaccount.google.com/connections" target="_blank" rel="noopener">Google 연결 관리</a>에서 해제할 수 있습니다.</p></div></dialog>
 <script src="config.js"></script><script src="js/core.js"></script><script src="js/data.js"></script><script src="js/app.js"></script><script src="js/drive.js"></script><script data-goatcounter="https://instagram-manager.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
 </body></html>

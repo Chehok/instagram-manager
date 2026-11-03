@@ -2,7 +2,7 @@
 'use strict';
 const $=id=>document.getElementById(id),esc=escapeHtml,KEY='igfc_snapshots';
 const state={followers:[],following:[],hasFollowers:false,hasFollowing:false,res:null,tab:'nfb',other:{},activity:emptyActivity(),me:''};
-let data={app:'igfc',version:2,snapshots:[],tags:{}},mode='local';
+let data={app:'igfc',version:3,snapshots:[],tags:{},tombstones:{}},mode='local';
 const today=new Date();$('exDate').value=fmtDate(today.getTime()/1000);
 function toast(text,ok=true){const el=$('toast');el.textContent=text;el.className='toast '+(ok?'tok':'terr');clearTimeout(el._t);el._t=setTimeout(()=>el.className='toast hidden',ok?3500:9000)}
 function status(text,error=false){$('status').textContent=text;$('status').className='msg '+(error?'err':'ok')}
@@ -19,13 +19,14 @@ async function loadStore(){
   renderSnaps();
   if(mode==='memory')toast('저장소를 사용할 수 없어 메모리에만 보관합니다. 새로고침 전에 JSON으로 내보내세요.',false);
 }
-async function persist(){
+async function persist(notify=true){
+  if(notify)window.dispatchEvent(new Event('igfc:change'));
   if(mode==='local')try{localStorage.setItem(KEY,JSON.stringify(data));try{await idbAccess(true,data)}catch(e){}return true}catch(e){mode='idb'}
   if(mode==='idb')try{await idbAccess(true,data);try{localStorage.removeItem(KEY)}catch(e){}return true}catch(e){mode='memory'}
   toast('기기에 저장하지 못했습니다. 새로고침 전에 JSON으로 내보내세요.',false);return false;
 }
 function backup(){return JSON.parse(JSON.stringify(data))}
-async function importBackup(input){await ready;data=mergeBackups(data,input);const saved=await persist();renderSnaps();if(state.res)refresh();return saved}
+async function importBackup(input,notify=true){await ready;data=mergeBackups(data,input);const saved=await persist(notify);renderSnaps();if(state.res)refresh();return saved}
 function download(name,text,type){const a=document.createElement('a'),url=URL.createObjectURL(new Blob(['\ufeff'+text],{type}));a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 const driveInfoBtn=$('driveInfoBtn'),driveInfoDialog=$('driveInfoDialog'),driveInfoClose=$('driveInfoClose');
 driveInfoBtn.onclick=()=>{if(typeof driveInfoDialog.showModal==='function')driveInfoDialog.showModal();else{driveInfoDialog.setAttribute('open','');driveInfoClose.focus()}};
@@ -87,15 +88,15 @@ function accountRow(e,badges){
 function renderList(){
   if(!state.res)return;
   $('otherKind').classList.toggle('hidden',state.tab!=='other');
-  $('listHint').textContent=state.tab==='ghost'?'추정: 자료에서 반응 또는 DM 연결이 없는 팔로워입니다. 표시 이름 불일치·자료 누락에 유의하세요.':state.tab==='other'?(state.other[$('otherKind').value]?'제공된 파일에 있는 목록입니다.':'이 목록 파일이 제공되지 않았습니다.'):'태그와 메모는 기기 저장 및 JSON·Drive 백업에 포함됩니다.';
+  $('listHint').textContent=state.tab==='ghost'?'자료에서 반응·DM 연결이 없는 팔로워 (추정)':state.tab==='other'?(state.other[$('otherKind').value]?'제공된 파일에 있는 목록입니다.':'이 목록 파일이 제공되지 않았습니다.'):'';
   const list=currentList(),badges=refollowed();$('count').textContent=list.length+'명';$('list').innerHTML=list.map(e=>accountRow(e,badges)).join('')||'<li class="muted">없습니다</li>';
 }
-function refresh(){state.res=compare(state.followers,state.following);$('results').classList.remove('hidden');$('summary').innerHTML=[['팔로워',state.hasFollowers?state.followers.length:'—'],['팔로잉',state.hasFollowing?state.following.length:'—'],['맞팔 안 함',state.hasFollowers&&state.hasFollowing?state.res.notFollowingBack.length:'—'],['나만 팔로우받음',state.hasFollowers&&state.hasFollowing?state.res.fans.length:'—']].map(([label,count])=>'<div class="stat-card"><span>'+label+'</span><strong>'+count.toLocaleString('ko-KR')+'</strong></div>').join('');renderList();renderDiff()}
+function refresh(){state.res=compare(state.followers,state.following);showResults();$('summary').innerHTML=[['팔로워',state.hasFollowers?state.followers.length:'—'],['팔로잉',state.hasFollowing?state.following.length:'—'],['맞팔 안 함',state.hasFollowers&&state.hasFollowing?state.res.notFollowingBack.length:'—'],['나만 팔로우받음',state.hasFollowers&&state.hasFollowing?state.res.fans.length:'—']].map(([label,count])=>'<div class="stat-card"><span>'+label+'</span><strong>'+count.toLocaleString('ko-KR')+'</strong></div>').join('');renderList();renderDiff()}
 function renderDiff(){
   const s=data.snapshots.find(s=>String(s.id)===$('snapSel').value),el=$('diff');
   if(!s||!state.hasFollowers){el.textContent='이전 스냅샷을 선택하고 현재 팔로워 파일을 올리세요.';return}
   const d=diffSnapshots(s.followers,state.followers.map(e=>e.username)),badges=refollowed();
-  el.innerHTML='<p>'+esc(s.date)+' ~ '+esc($('exDate').value)+' 사이 · 언팔·삭제·비활성화·차단·아이디 변경일 수 있습니다.</p><h3>사라진 팔로워 '+d.lost.length+'명</h3><div class="result-scroll"><ul class="list">'+d.lost.map(u=>accountRow({username:u},badges)).join('')+'</ul></div><h3>새 팔로워 '+d.gained.length+'명</h3><div class="result-scroll"><ul class="list">'+d.gained.map(u=>accountRow({username:u},badges)).join('')+'</ul></div>';
+  el.innerHTML='<p>'+esc(s.date)+' ~ '+esc($('exDate').value)+' 사이</p><h3>사라진 팔로워 '+d.lost.length+'명</h3><div class="result-scroll"><ul class="list">'+d.lost.map(u=>accountRow({username:u},badges)).join('')+'</ul></div><h3>새 팔로워 '+d.gained.length+'명</h3><div class="result-scroll"><ul class="list">'+d.gained.map(u=>accountRow({username:u},badges)).join('')+'</ul></div>';
 }
 function countChart(){
   const s=data.snapshots;if(!s.length)return '<p class="muted">저장된 스냅샷이 없습니다.</p>';
@@ -108,7 +109,7 @@ function countChart(){
   svg+=s.map((x,i)=>'<text x="'+(20+i*(w-110)/Math.max(1,s.length-1))+'" y="220">'+esc(x.date)+'</text>').join('');return svg+'</svg>';
 }
 function renderSnaps(){
-  const s=data.snapshots,previous=$('snapSel').value;if(s.length&&!state.res){state.res=compare(state.followers,state.following);$('results').classList.remove('hidden');selectTab('track');}
+  const s=data.snapshots,previous=$('snapSel').value;if(s.length&&!state.res){state.res=compare(state.followers,state.following);refresh();selectSection('track');}
   $('snapList').innerHTML=s.map(x=>'<li><span>'+esc(x.date)+' · 팔로워 '+x.followers.length+'명 · 팔로잉 '+(x.following?x.following.length+'명':'정보 없음')+'</span><button class="sec ghost" data-del="'+esc(x.id)+'">삭제</button></li>').join('')||'<li>저장된 스냅샷이 없습니다</li>';
   $('snapSel').innerHTML=s.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.date)+'</option>').join('');$('snapSel').value=s.some(x=>String(x.id)===previous)?previous:String(s.at(-1)?.id||'');
   const events=timeline(s);$('timeline').innerHTML=events.map(e=>'<li><span>@'+esc(e.username)+' · '+esc(e.from)+' ~ '+esc(e.to)+' · '+e.type+'</span>'+(e.refollowed?'<span class="badge">재팔로우</span>':'')+'</li>').join('')||'<li>타임라인에는 날짜가 다른 스냅샷이 2개 이상 필요합니다.</li>';
@@ -117,17 +118,41 @@ function renderSnaps(){
 function renderActivity(reset=false){
   const a=state.activity,names=[...new Set(a.messages.map(m=>m.sender))].sort();
   if(reset){$('me').innerHTML='<option value="">선택 안 함</option>'+names.map(n=>'<option>'+esc(n)+'</option>').join('');$('me').value=state.me}
-  $('meHint').textContent='여러 대화에서 가장 자주 등장한 발신자를 내 이름으로 추정했습니다. 동명이인·그룹 대화로 틀릴 수 있으니 직접 선택하세요. 선택하지 않으면 보낸 메시지 통계는 제외됩니다.';
-  $('activityHint').textContent=a.available.length?'자료에서 읽은 반응 '+a.events.length+'건 · 메시지 '+a.messages.length+'건. 없는 활동 종류는 집계에서 제외합니다.':'활동 자료가 없습니다. 좋아요·댓글·스토리 활동·메시지를 선택하여 JSON으로 내보내세요.';
+  $('meHint').textContent='내 표시 이름을 확인하면 보낸 메시지도 집계해요.';
+  $('activityHint').textContent=a.available.length?'자료에서 읽은 반응 '+a.events.length+'건 · 메시지 '+a.messages.length+'건':'활동 자료가 없습니다. 내보낸 활동 JSON을 올려주세요.';
   const summary=activitySummary(a,state.me);
   $('outRank').innerHTML=summary.outgoing.map(e=>'<li><span>@'+esc(e.username)+'</span><b>'+e.count+'회</b></li>').join('')||'<li>집계 가능한 계정 정보가 없습니다.</li>';
   $('dmRank').innerHTML=(state.me?summary.incoming.map(e=>'<li><span>'+esc(e.username)+'</span><b>'+e.count+'개</b></li>').join(''):'')||'<li>메시지 자료와 내 표시 이름을 확인하세요.</li>';
   $('hourChart').innerHTML=barChart(summary.hours.map((_,i)=>i+'시'),summary.hours,'현지 시간대별 내 활동');
   const months=Object.keys(summary.months).sort();$('monthChart').innerHTML=barChart(months,months.map(k=>summary.months[k]),'월별 내 활동');
-  const available=a.events.some(e=>e.username)||a.messages.length>0;$('ghostTab').disabled=!available;$('ghostTab').title=available?'제공된 자료 기준 추정':'식별 가능한 활동 자료가 없어 추정할 수 없습니다';if(!available&&a.available.length)$('activityHint').textContent+=' 계정과 연결할 활동 자료가 없어 유령 팔로워 추정을 사용할 수 없습니다.';
+  const available=a.events.some(e=>e.username)||a.messages.length>0;$('ghostTab').disabled=!available;$('ghostTab').title=available?'제공된 자료 기준 추정':'식별 가능한 활동 자료가 없어 추정할 수 없습니다';if(!available&&a.available.length)$('activityHint').textContent+=' · 유령 추정 불가';
   if(!available&&state.tab==='ghost')selectTab('nfb');renderList();
 }
-function selectTab(tab){state.tab=tab;document.querySelectorAll('.tabs button').forEach(b=>{b.classList.toggle('on',b.dataset.t===tab);b.setAttribute('aria-pressed',String(b.dataset.t===tab))});$('listPane').classList.toggle('hidden',tab==='track');$('trackPane').classList.toggle('hidden',tab!=='track');renderList();renderDiff()}
+function showResults(){
+  $('hero').classList.add('hidden');$('resultsHeader').classList.remove('hidden');$('results').classList.remove('hidden');
+}
+function selectSection(section){
+  document.querySelectorAll('[data-panel]').forEach(p=>{const active=p.dataset.panel===section;p.classList.toggle('hidden',!active);p.hidden=!active});
+  document.querySelectorAll('[data-section]').forEach(b=>{if(b.dataset.section===section)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});
+}
+function selectTab(tab){
+  if(tab==='track'){selectSection('track');renderDiff();return}
+  state.tab=tab;selectSection('relationships');document.querySelectorAll('.tabs button').forEach(b=>{b.classList.toggle('on',b.dataset.t===tab);b.setAttribute('aria-pressed',String(b.dataset.t===tab))});renderList();
+}
+document.querySelectorAll('[data-section]').forEach(b=>b.onclick=()=>selectSection(b.dataset.section));
+document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>selectSection(b.dataset.go));
+document.querySelector('.section-nav').addEventListener('keydown',e=>{
+  const buttons=[...document.querySelectorAll('[data-section]')],i=buttons.indexOf(e.target);if(i<0)return;
+  const next=e.key==='Home'?0:e.key==='End'?buttons.length-1:['ArrowRight','ArrowDown'].includes(e.key)?(i+1)%buttons.length:['ArrowLeft','ArrowUp'].includes(e.key)?(i+buttons.length-1)%buttons.length:-1;
+  if(next>=0){e.preventDefault();buttons[next].focus();buttons[next].click()}
+});
+$('uploadAgain').onclick=()=>$('file').click();$('heroImport').onclick=()=>$('impFile').click();
+document.querySelectorAll('[data-dialog]').forEach(button=>{
+  const dialog=$(button.dataset.dialog),close=dialog.querySelector('[data-close]');
+  button.onclick=()=>{if(dialog.showModal)dialog.showModal();else dialog.setAttribute('open','');close.focus()};
+  close.onclick=()=>{if(dialog.close)dialog.close();else{dialog.removeAttribute('open');button.focus()}};
+  dialog.addEventListener('close',()=>button.focus());dialog.addEventListener('click',e=>{if(e.target===dialog)close.click()});
+});
 $('drop').onclick=()=>$('file').click();$('drop').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('file').click()}};
 for(const event of ['dragover','dragenter'])$('drop').addEventListener(event,e=>{e.preventDefault();$('drop').classList.add('over')});
 for(const event of ['dragleave','drop'])$('drop').addEventListener(event,e=>{e.preventDefault();$('drop').classList.remove('over')});
@@ -138,7 +163,7 @@ $('results').addEventListener('change',async e=>{
   const row=e.target.closest('.note');if(!row)return;
   let tag=row.querySelector('.tag').value;
   if(tag==='__custom'){const custom=prompt('태그 이름을 입력하세요');if(custom===null){renderList();renderDiff();return}tag=custom.trim().slice(0,100)}
-  const key=row.dataset.user;Object.defineProperty(data.tags,key,{value:{tag,memo:row.querySelector('.memo').value.slice(0,2000)},enumerable:true,writable:true,configurable:true});
+  const key=row.dataset.user;Object.defineProperty(data.tags,key,{value:{tag,memo:row.querySelector('.memo').value.slice(0,2000),updatedAt:Date.now()},enumerable:true,writable:true,configurable:true});
   await persist();renderList();renderDiff();
 });
 $('me').onchange=()=>{state.me=$('me').value;renderActivity()};
@@ -152,11 +177,11 @@ $('saveSnap').onclick=async()=>{
   data.snapshots.push(snap);data.snapshots.sort((a,b)=>a.date.localeCompare(b.date));const saved=await persist();renderSnaps();$('snapSel').value=snap.id;renderDiff();
   if(saved)toast(date+' 스냅샷을 저장했습니다');else download('instagram_snapshots.json',JSON.stringify(backup()),'application/json');
 };
-$('snapList').onclick=async e=>{const id=e.target.dataset.del;if(id&&confirm('이 스냅샷을 삭제할까요?')){data.snapshots=data.snapshots.filter(s=>String(s.id)!==id);const saved=await persist();renderSnaps();if(saved)toast('삭제했습니다')}};
+$('snapList').onclick=async e=>{const id=e.target.dataset.del;if(id&&confirm('이 스냅샷을 삭제할까요?')){Object.defineProperty(data.tombstones,id,{value:Date.now(),enumerable:true,writable:true,configurable:true});data.snapshots=data.snapshots.filter(s=>String(s.id)!==id);const saved=await persist();renderSnaps();if(saved)toast('삭제했습니다')}};
 $('snapSel').onchange=renderDiff;$('exDate').onchange=()=>{renderDiff();renderList()};
 $('expSnap').onclick=()=>download('instagram_snapshots_'+$('exDate').value+'.json',JSON.stringify(backup(),null,2),'application/json');
 $('impBtn').onclick=()=>$('impFile').click();$('impFile').onchange=async function(){try{if(!this.files[0])return;const saved=await importBackup(JSON.parse((await fileText(this.files[0])).replace(/^\uFEFF/,'')));if(saved)toast('스냅샷과 메모를 가져왔습니다')}catch(e){toast('올바른 스냅샷 파일이 아닙니다: '+e.message,false)}this.value=''};
 const ready=loadStore();
-window.IGApp={ready,state,handle,backup,importBackup,toast,selectTab,currentList,get storageMode(){return mode}};
+window.IGApp={ready,state,handle,backup,importBackup,toast,selectTab,selectSection,currentList,get storageMode(){return mode}};
 if('serviceWorker' in navigator&&(location.protocol==='https:'||['localhost','127.0.0.1','[::1]'].includes(location.hostname)))navigator.serviceWorker.register('./sw.js').catch(()=>toast('오프라인 준비에 실패했습니다. 온라인에서는 계속 사용할 수 있습니다.',false));
 })();
