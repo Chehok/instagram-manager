@@ -6,6 +6,7 @@
 #drop{border:2px dashed #bbb;border-radius:12px;padding:28px;text-align:center;cursor:pointer}#drop.over{border-color:#d62976;background:#fff0f6}
 button,.btn{background:#d62976;color:#fff;border:0;border-radius:8px;padding:8px 12px;font-size:.9rem;cursor:pointer;margin:2px}
 button.sec{background:#eee;color:#333}input,select{padding:8px;border:1px solid #ccc;border-radius:8px;font-size:.9rem}
+.link-button{background:transparent;color:#ad205f;text-decoration:underline;padding:8px 6px}#driveInfoDialog{width:min(620px,calc(100vw - 24px));max-width:620px;max-height:calc(100dvh - 24px);padding:0;border:0;border-radius:14px;box-shadow:0 12px 40px #0004;color:#222}#driveInfoDialog::backdrop{background:#0007}.dialog-content{padding:18px;max-height:calc(100dvh - 24px);overflow-y:auto;-webkit-overflow-scrolling:touch}.dialog-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.dialog-heading h2{font-size:1.15rem;margin:.3em 0 .7em}.dialog-content ol{padding-left:1.4em;line-height:1.55}.dialog-content li{margin:.55em 0}
 .tabs{display:flex;gap:4px;flex-wrap:wrap}.tabs button{background:#eee;color:#333}.tabs button.on{background:#d62976;color:#fff}
 .tools{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}.tools input{flex:1;min-width:140px}
 ul.list{list-style:none;padding:0;margin:0}ul.list li{display:flex;justify-content:space-between;padding:8px 4px;border-bottom:1px solid #eee;gap:8px}

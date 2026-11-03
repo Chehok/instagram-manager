@@ -27,6 +27,12 @@ async function persist(){
 function backup(){return JSON.parse(JSON.stringify(data))}
 async function importBackup(input){await ready;data=mergeBackups(data,input);const saved=await persist();renderSnaps();if(state.res)refresh();return saved}
 function download(name,text,type){const a=document.createElement('a'),url=URL.createObjectURL(new Blob(['\ufeff'+text],{type}));a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+const driveInfoBtn=$('driveInfoBtn'),driveInfoDialog=$('driveInfoDialog'),driveInfoClose=$('driveInfoClose');
+driveInfoBtn.onclick=()=>{if(typeof driveInfoDialog.showModal==='function')driveInfoDialog.showModal();else{driveInfoDialog.setAttribute('open','');driveInfoClose.focus()}};
+driveInfoClose.onclick=()=>{if(typeof driveInfoDialog.close==='function')driveInfoDialog.close();else driveInfoDialog.removeAttribute('open');driveInfoBtn.focus()};
+driveInfoDialog.addEventListener('cancel',()=>driveInfoBtn.focus());
+driveInfoDialog.addEventListener('close',()=>driveInfoBtn.focus());
+driveInfoDialog.addEventListener('click',e=>{if(e.target===driveInfoDialog)driveInfoClose.click()});
 function fileText(f){if(f.text)return f.text();return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(r.error);r.readAsText(f)})}
 async function handle(files){
   await ready;

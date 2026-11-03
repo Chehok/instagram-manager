@@ -19,6 +19,8 @@ async function page(options={}){
  const errors=[],vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(e));
  const dom=new JSDOM(fs.readFileSync(path.join(root,'index.html'),'utf8'),{url:options.url||'https://example.test/instagram-manager/',runScripts:'dangerously',resources:localResources,virtualConsole:vc,beforeParse(w){
   w.setImmediate=setImmediate;w.clearImmediate=clearImmediate;w.TextDecoder=TextDecoder;w.swRegistrations=[];Object.defineProperty(w.navigator,'serviceWorker',{value:{register:async url=>{w.swRegistrations.push(url)}}});w.prompt=()=>null;w.confirm=()=>true;w.URL.createObjectURL=()=> 'blob:fake';w.URL.revokeObjectURL=()=>{};w.HTMLAnchorElement.prototype.click=function(){w.lastDownload=this.download};
+  if(!w.HTMLDialogElement.prototype.showModal)w.HTMLDialogElement.prototype.showModal=function(){this.setAttribute('open','');this.dispatchEvent(new w.Event('beforetoggle'))};
+  if(!w.HTMLDialogElement.prototype.close)w.HTMLDialogElement.prototype.close=function(){this.removeAttribute('open');this.dispatchEvent(new w.Event('close'))};
   if(options.noLocal)Object.defineProperty(w,'localStorage',{get(){throw new Error('blocked')}});
   if(options.indexedDB)w.indexedDB=options.indexedDB;
  }});
@@ -32,6 +34,8 @@ function fakeIDB(){
 async function main(){
  const dom=await page(),w=dom.window,app=w.IGApp,$=id=>w.document.getElementById(id);
  assert.equal(app.storageMode,'local');assert.deepEqual(Array.from(w.swRegistrations),['./sw.js']);assert.equal($('driveSave').disabled,true);assert.match($('driveSave').textContent,/설정 필요/);
+ $('driveInfoBtn').click();assert.equal($('driveInfoDialog').open,true,'Drive 미설정 상태에서도 안내 열기');$('driveInfoClose').click();assert.equal($('driveInfoDialog').open,false,'닫기 버튼');assert.equal(w.document.activeElement,$('driveInfoBtn'),'닫은 뒤 버튼으로 포커스 복귀');
+ $('driveInfoBtn').click();$('driveInfoDialog').dispatchEvent(new w.Event('cancel',{cancelable:true}));$('driveInfoDialog').close();assert.equal($('driveInfoDialog').open,false,'Esc/cancel 닫기');assert.equal(w.document.activeElement,$('driveInfoBtn'),'Esc 뒤 버튼으로 포커스 복귀');
  assert.equal(w.document.querySelector('script[src*="gsi"]'),null,'GIS는 지연 로드');
  const read=name=>JSON.parse(fs.readFileSync(path.join(root,'samples',name),'utf8'));
  await app.importBackup(read('sample_snapshot_backup.json'));assert.equal(app.backup().snapshots.length,1);$('snapList').querySelector('[data-del]').click();await tick();assert.equal(app.backup().snapshots.length,0);
